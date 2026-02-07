@@ -27,112 +27,79 @@ impl Car {
     }
 
     // Added 'blocked' parameter
-    pub fn update(&mut self, dt: f32, state: String, blocked: bool) {
+    pub fn update(&mut self, dt: f32, blocked: bool) {
         if blocked {
-            return;
+            return; // Don't move if blocked
         }
-
         let (mut x, mut y) = self.cord;
 
         match self.direction.as_str() {
             "up" => {
-                if
-                    y >= screen_height() / 2.0 + 12.0 &&
-                    y <= screen_height() / 2.0 + 18.0 &&
-                    self.color == RED
+                if y >= screen_height() / 2.0 + 12.0
+                    && y <= screen_height() / 2.0 + 18.0
+                    && self.color == RED
                 {
                     y = screen_height() / 2.0 + 15.0;
                     x += self.speed * dt;
-                } else if
-                    y >= screen_height() / 2.0 - 48.0 &&
-                    y <= screen_height() / 2.0 - 43.0 &&
-                    self.color == YELLOW
+                } else if y >= screen_height() / 2.0 - 48.0
+                    && y <= screen_height() / 2.0 - 43.0
+                    && self.color == YELLOW
                 {
                     y = screen_height() / 2.0 - 45.0;
                     x -= self.speed * dt;
                 } else {
-                    if state == self.direction {
-                        y -= self.speed * dt;
-                    } else if y >= screen_height() / 2.0 + 65.0 {
-                        y -= self.speed * dt;
-                    } else if y < screen_height() / 2.0 + 60.0 {
-                        y -= self.speed * dt;
-                    }
+                    y -= self.speed * dt;
                 }
             }
             "down" => {
-                if
-                    y >= screen_height() / 2.0 - 48.0 &&
-                    y <= screen_height() / 2.0 - 43.0 &&
-                    self.color == RED
+                if y >= screen_height() / 2.0 - 48.0
+                    && y <= screen_height() / 2.0 - 43.0
+                    && self.color == RED
                 {
                     y = screen_height() / 2.0 - 45.0;
                     x -= self.speed * dt;
-                } else if
-                    y >= screen_height() / 2.0 + 12.0 &&
-                    y <= screen_height() / 2.0 + 18.0 &&
-                    self.color == YELLOW
+                } else if y >= screen_height() / 2.0 + 12.0
+                    && y <= screen_height() / 2.0 + 18.0
+                    && self.color == YELLOW
                 {
                     y = screen_height() / 2.0 + 15.0;
                     x += self.speed * dt;
                 } else {
-                    if state == self.direction {
-                        y += self.speed * dt;
-                    } else if y <= screen_height() / 2.0 - 95.0 {
-                        y += self.speed * dt;
-                    } else if y > screen_height() / 2.0 - 90.0 {
-                        y += self.speed * dt;
-                    }
+                    y += self.speed * dt;
                 }
             }
             "left" => {
-                if
-                    x >= screen_width() / 2.0 + 12.0 &&
-                    x <= screen_width() / 2.0 + 18.0 &&
-                    self.color == RED
+                if x >= screen_width() / 2.0 + 12.0
+                    && x <= screen_width() / 2.0 + 18.0
+                    && self.color == RED
                 {
                     x = screen_width() / 2.0 + 15.0;
                     y -= self.speed * dt;
-                } else if
-                    x >= screen_width() / 2.0 - 48.0 &&
-                    x <= screen_width() / 2.0 - 42.0 &&
-                    self.color == YELLOW
+                } else if x >= screen_width() / 2.0 - 48.0
+                    && x <= screen_width() / 2.0 - 42.0
+                    && self.color == YELLOW
                 {
                     x = screen_width() / 2.0 - 45.0;
                     y += self.speed * dt;
                 } else {
-                    if state == self.direction {
-                        x -= self.speed * dt;
-                    } else if x >= screen_width() / 2.0 + 65.0 {
-                        x -= self.speed * dt;
-                    } else if x < screen_width() / 2.0 + 60.0 {
-                        x -= self.speed * dt;
-                    }
+                    x -= self.speed * dt;
                 }
             }
             "right" => {
-                if
-                    x >= screen_width() / 2.0 - 48.0 &&
-                    x <= screen_width() / 2.0 - 42.0 &&
-                    self.color == RED
+                if x >= screen_width() / 2.0 - 48.0
+                    && x <= screen_width() / 2.0 - 42.0
+                    && self.color == RED
                 {
                     x = screen_width() / 2.0 - 45.0;
                     y += self.speed * dt;
-                } else if
-                    x >= screen_width() / 2.0 + 12.0 &&
-                    x <= screen_width() / 2.0 + 18.0 &&
-                    self.color == YELLOW
+                } else if x >= screen_width() / 2.0 + 12.0
+                    && x <= screen_width() / 2.0 + 18.0
+                    && self.color == YELLOW
                 {
                     x = screen_width() / 2.0 + 15.0;
                     y -= self.speed * dt;
                 } else {
-                    if state == self.direction {
-                        x += self.speed * dt;
-                    } else if x <= screen_width() / 2.0 - 95.0 {
-                        x += self.speed * dt;
-                    } else if x > screen_width() / 2.0 - 90.0 {
-                        x += self.speed * dt;
-                    }
+                    x += self.speed * dt;
                 }
             }
             _ => {}
