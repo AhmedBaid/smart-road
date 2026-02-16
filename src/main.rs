@@ -1,176 +1,145 @@
-use macroquad::prelude::*;
-mod cars;
-mod dashed;
+use macroquad::input::KeyCode::{Down, Left, Right, Up};
+use macroquad::{prelude::*, rand::gen_range};
+use std::default::Default;
+
+mod stats;
+use stats::*;
+mod car;
+use car::*;
 mod draw_road;
-use cars::*;
 use draw_road::*;
+mod dashed;
 
-// To satisfy the 3 distinct velocities requirement
-const VELOCITY_SLOW: f32 = 60.0;
-const VELOCITY_MED: f32 = 120.0;
-const VELOCITY_FAST: f32 = 180.0;
-
-#[derive(Default)]
-struct Stats {
-    passed_vehicles: usize,
-    max_speed: f32,
-    min_speed: f32,
-    max_time: f32,
-    min_time: f32,
-    close_calls: usize,
-}
-
-fn window_conf() -> Conf {
+fn conf() -> Conf {
     Conf {
-        window_title: "Smart Intersection".to_string(),
-        window_width: 1000,
-        window_height: 1000,
-        window_resizable: false,
+        window_title: String::from("Smart Road"),
+        window_height: 1200,
+        window_width: 1200,
+        fullscreen: false,
         ..Default::default()
     }
 }
 
-fn can_spawn(cars: &[Car], origin: Origin, route: Route, w: f32, h: f32) -> bool {
-    let dummy = Car::new(origin, route, w, h);
-    for car in cars {
-        if car.cord.distance(dummy.cord) < 80.0 {
-            return false;
-        }
-    }
-    true
-}
-
-#[macroquad::main(window_conf)]
+#[macroquad::main(conf)]
 async fn main() {
+    let mut statistics: Stats = Stats {
+        total_cars: 0,
+        best_time: 999999999.,
+        worst_time: 0.,
+        best_velocity: 0.,
+        worst_velocity: 999999999.,
+        collisions: 0,
+        close_calls: 0,
+    };
+
+    let mut is_escaped: bool = false;
+    let mut is_exit: bool = false;
+    let mut is_paused = false;
+    let mut is_random = false;
+    let mut is_debug_mode = false;
+    
+    // Make sure you have a "car.png" in an "assets" folder next to Cargo.toml
+    let car_texture: Texture2D = load_texture("assets/car.png").await.unwrap_or(Texture2D::empty());
     let mut cars: Vec<Car> = Vec::new();
-    let mut stats = Stats { min_speed: 999.0, min_time: 999.0, ..Default::default() };
-    let mut auto_spawn = false;
-    let mut last_spawn_time = get_time();
-
-    // Create a generic car texture for rotation animation
-    let car_img = Image::gen_image_color(40, 20, WHITE);
-    let car_texture = Texture2D::from_image(&car_img);
+    let core_intersection = Rect::new(503., 520., 180., 180.);
 
     loop {
-        let dt = get_frame_time();
-        draw_road();
-
         if is_key_pressed(KeyCode::Escape) {
-            break; // Exit to stats screen
-        }
-
-        if is_key_pressed(KeyCode::R) {
-            auto_spawn = !auto_spawn;
-        }
-
-        // --- SPAWN LOGIC ---
-        let mut try_spawn = |origin: Origin| {
-            let routes = [Route::Left, Route::Straight, Route::Right];
-            let route = routes[rand::gen_range(0, 3)];
-            if can_spawn(&cars, origin, route, screen_width(), screen_height()) {
-                cars.push(Car::new(origin, route, screen_width(), screen_height()));
-            }
-        };
-
-        if is_key_pressed(KeyCode::Up) { try_spawn(Origin::South); }
-        if is_key_pressed(KeyCode::Down) { try_spawn(Origin::North); }
-        if is_key_pressed(KeyCode::Right) { try_spawn(Origin::West); }
-        if is_key_pressed(KeyCode::Left) { try_spawn(Origin::East); }
-
-        if auto_spawn && get_time() - last_spawn_time > 0.5 {
-            let origins = [Origin::North, Origin::South, Origin::East, Origin::West];
-            try_spawn(origins[rand::gen_range(0, 4)]);
-            last_spawn_time = get_time();
-        }
-
-        // --- SMART INTERSECTION MANAGEMENT ---
-        for i in 0..cars.len() {
-            let mut requested_speed = VELOCITY_FAST;
-            let my_cord = cars[i].cord;
-
-            for j in 0..cars.len() {
-                if i == j { continue; }
-                let dist = my_cord.distance(cars[j].cord);
-
-                // Check Close Calls (Safety Distance Violation)
-                if dist < 45.0 {
-                    stats.close_calls += 1;
-                }
-
-                // If approaching someone in front, slow down (Car Following)
-                if dist < 80.0 && !cars[i].in_intersection {
-                    requested_speed = VELOCITY_SLOW;
-                }
-
-                // Collision Avoidance inside/near intersection
-                if (cars[i].in_intersection || cars[j].in_intersection) && dist < 100.0 {
-                     if i > j { requested_speed = VELOCITY_MED; } 
-                     else { requested_speed = VELOCITY_SLOW; }
-                }
-            }
-            cars[i].target_speed = requested_speed;
-            cars[i].update(dt, screen_width() / 2.0, screen_height() / 2.0);
-        }
-
-        // --- RENDER & REMOVE ---
-        cars.retain(|car| {
-            let cx = screen_width() / 2.0;
-            let cy = screen_height() / 2.0;
-            
-            draw_texture_ex(
-                &car_texture, 
-                car.cord.x - 20.0, car.cord.y - 10.0, 
-                car.color, 
-                DrawTextureParams { rotation: car.rotation, ..Default::default() }
-            );
-
-            // Calculate physics dynamically: v = d / t
-            let calculated_velocity = if car.time_active > 0.0 { car.distance_traveled / car.time_active } else { 0.0 };
-
-            // Remove car if it's far off screen
-            if car.cord.x < -100.0 || car.cord.x > screen_width() + 100.0 || 
-               car.cord.y < -100.0 || car.cord.y > screen_height() + 100.0 {
-                
-                // Record Stats upon exit
-                stats.passed_vehicles += 1;
-                if calculated_velocity > stats.max_speed { stats.max_speed = calculated_velocity; }
-                if calculated_velocity < stats.min_speed { stats.min_speed = calculated_velocity; }
-                if car.time_active > stats.max_time { stats.max_time = car.time_active; }
-                if car.time_active < stats.min_time { stats.min_time = car.time_active; }
-                false
+            if is_exit {
+                std::process::exit(0);
             } else {
-                true
+                is_escaped = true;
+                is_exit = true;
             }
-        });
-
-        next_frame().await;
-    }
-
-    // --- STATISTICS SCREEN LOOP ---
-    loop {
-        clear_background(DARKGRAY);
-        let center_x = screen_width() / 2.0 - 200.0;
-        let mut y = 200.0;
-        
-        draw_text("SIMULATION FINISHED - STATISTICS", center_x - 50.0, 100.0, 40.0, GOLD);
-        
-        let stats_text = [
-            format!("Total Vehicles Passed: {}", stats.passed_vehicles),
-            format!("Max Velocity (d/t): {:.2} px/s", stats.max_speed),
-            format!("Min Velocity (d/t): {:.2} px/s", if stats.min_speed == 999.0 { 0.0 } else { stats.min_speed }),
-            format!("Max Time to Pass: {:.2} s", stats.max_time),
-            format!("Min Time to Pass: {:.2} s", if stats.min_time == 999.0 { 0.0 } else { stats.min_time }),
-            format!("Close Calls Detected: {}", stats.close_calls / 2), // Div 2 because both cars log the close call
-        ];
-
-        for text in stats_text.iter() {
-            draw_text(text, center_x, y, 30.0, WHITE);
-            y += 50.0;
         }
+        if is_key_pressed(KeyCode::P) { is_paused = !is_paused; }
+        if is_key_pressed(KeyCode::D) { is_debug_mode = !is_debug_mode; }
 
-        draw_text("Press 'Q' to Quit", center_x + 50.0, y + 50.0, 30.0, RED);
-        if is_key_pressed(KeyCode::Q) { break; }
-        
+        if is_escaped {
+            clear_background(DARKGRAY);
+            statistics.draw_endgame();
+        } else if is_paused {
+            clear_background(Color::from_rgba(30, 30, 30, 255));
+            draw_road();
+            
+            if is_debug_mode {
+                draw_rectangle(core_intersection.x, core_intersection.y, core_intersection.w, core_intersection.h, Color::new(0.5, 0.5, 0., 0.1));
+            }
+
+            cars.iter().for_each(|car| car.draw_all_components(&car_texture, is_debug_mode));
+            draw_text("Press P to continue", 430., 600., 40., GOLD);
+        } else {
+            // INPUT
+            if is_key_pressed(Left) { Car::spawn_if_can(&mut cars, vec!["RU", "RL", "RD"][gen_range(0, 3)], "West"); } 
+            else if is_key_pressed(Up) { Car::spawn_if_can(&mut cars, vec!["DU", "DL", "DR"][gen_range(0, 3)], "North"); } 
+            else if is_key_pressed(Down) { Car::spawn_if_can(&mut cars, vec!["UL", "UD", "UR"][gen_range(0, 3)], "South"); } 
+            else if is_key_pressed(Right) { Car::spawn_if_can(&mut cars, vec!["LU", "LR", "LD"][gen_range(0, 3)], "East"); } 
+            else if is_key_pressed(KeyCode::R) { is_random = !is_random; }
+
+            if is_random && gen_range(0, 100) < 5 { // Throttle random spawning slightly
+                let random_direction = vec!["West", "North", "South", "East"][gen_range(0, 4)];
+                match random_direction {
+                    "West" => Car::spawn_if_can(&mut cars, vec!["RU", "RL", "RD"][gen_range(0, 3)], random_direction),
+                    "North" => Car::spawn_if_can(&mut cars, vec!["DU", "DL", "DR"][gen_range(0, 3)], random_direction),
+                    "South" => Car::spawn_if_can(&mut cars, vec!["UL", "UD", "UR"][gen_range(0, 3)], random_direction),
+                    "East" => Car::spawn_if_can(&mut cars, vec!["LU", "LR", "LD"][gen_range(0, 3)], random_direction),
+                    _ => {}
+                }
+            }
+
+            // UPDATE
+            cars.retain(|car| {
+                if &*car.current_direction == "West" && car.car_rect.x < 100. {
+                    car.check_for_best_or_worst_time(&mut statistics);
+                    statistics.total_cars += 1;
+                    false
+                } else if &*car.current_direction == "North" && car.car_rect.y < 100. {
+                    car.check_for_best_or_worst_time(&mut statistics);
+                    statistics.total_cars += 1;
+                    false
+                } else if &*car.current_direction == "South" && car.car_rect.y > 1050. {
+                    car.check_for_best_or_worst_time(&mut statistics);
+                    statistics.total_cars += 1;
+                    false
+                } else if &*car.current_direction == "East" && car.car_rect.x + car.car_size.long_edge > 1100. {
+                    car.check_for_best_or_worst_time(&mut statistics);
+                    statistics.total_cars += 1;
+                    false
+                } else {
+                    true
+                }
+            });
+
+            let mut temp_cars = cars.clone();
+            cars.iter().for_each(|car| car.check_for_collision(&mut temp_cars, &mut statistics));
+
+            let temp_cars = cars.clone();
+            cars.iter_mut().for_each(|car| car.communicate_with_intersection(&temp_cars, &core_intersection));
+
+            let temp_cars = cars.clone();
+            for (car_index, car) in cars.iter_mut().enumerate() {
+                car.update_radar(car_index, &temp_cars);
+            }
+
+            cars.iter_mut().for_each(|car| car.adjust_current_speed());
+
+            let mut temp_cars = cars.clone();
+            cars.iter_mut().filter(|car| !car.waiting_flag).for_each(|car| car.move_one_step_if_no_collide(&mut temp_cars, &mut statistics));
+
+            let temp_cars = cars.clone();
+            cars.iter_mut().for_each(|car| car.turn_if_can(&temp_cars));
+
+            // RENDER
+            clear_background(Color::from_rgba(30, 30, 30, 255));
+            draw_road(); // Using your drawn road!
+
+            if is_debug_mode {
+                draw_rectangle(core_intersection.x, core_intersection.y, core_intersection.w, core_intersection.h, Color::new(0.5, 0.5, 0., 0.1));
+            }
+
+            cars.iter().for_each(|car| car.draw_all_components(&car_texture, is_debug_mode));
+            statistics.draw_ingame();
+        }
         next_frame().await;
     }
 }
