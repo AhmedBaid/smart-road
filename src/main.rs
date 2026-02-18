@@ -60,7 +60,7 @@ fn can_spawn(cars: &Vec<Car>, direction: &str, spawn_cord: (f32, f32)) -> bool {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let car_tex: Texture2D = load_texture("assets/car.png").await.unwrap();
+    let car_tex: Texture2D = load_texture("assets/car2.png").await.unwrap();
     car_tex.set_filter(FilterMode::Nearest);
     let mut cars: Vec<Car> = Vec::new();
 
