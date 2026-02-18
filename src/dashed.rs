@@ -4,7 +4,7 @@ pub fn draw_dashed_middle_lines(gap: f32) {
     let h = screen_height();
     let cx = w / 2.0;
     let cy = h / 2.0;
-
+    let gapp = 120.0;
     let dash = 18.0;
     let space = 12.0;
     let thickness = 2.0;
@@ -41,6 +41,143 @@ pub fn draw_dashed_middle_lines(gap: f32) {
         space,
         thickness,
         YELLOW,
+    );
+    // dashed for right lane 1
+    draw_dashed_line(
+        vec2(0.0, cy - 80.0),
+        vec2(cx - gapp, cy - 80.0),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+    draw_dashed_line(
+        vec2(0.0, cy - 40.0),
+        vec2(cx - gapp, cy - 40.0),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+    // dashed for right lane 2
+    draw_dashed_line(
+        vec2(0.0, cy + 40.0),
+        vec2(cx - gapp, cy + 40.0),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+    draw_dashed_line(
+        vec2(0.0, cy + 80.0),
+        vec2(cx - gapp, cy + 80.0),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+    // dashed for top lane 1
+    draw_dashed_line(
+        vec2(cx - 80.0, h),
+        vec2(cx - 80.0, cy + gapp),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+    draw_dashed_line(
+        vec2(cx - 40.0, h),
+        vec2(cx - 40.0, cy + gapp),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+    // dashed for top lane 2
+    draw_dashed_line(
+        vec2(cx + 40.0, h),
+        vec2(cx + 40.0, cy + gapp),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+    draw_dashed_line(
+        vec2(cx + 80.0, h),
+        vec2(cx + 80.0, cy + gapp),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+    // dashed for left lane 1
+    draw_dashed_line(
+        vec2(w, cy + 80.0),
+        vec2(cx + gapp, cy + 80.0),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+    draw_dashed_line(
+        vec2(w, cy + 40.0),
+        vec2(cx + gapp, cy + 40.0),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+    // dashed for left lane 2
+    draw_dashed_line(
+        vec2(w, cy -40.0),
+        vec2(cx + gapp, cy - 40.0),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+    draw_dashed_line(
+        vec2(w, cy -80.0),
+        vec2(cx + gapp, cy - 80.0),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+    // dashed for up lane 1
+    draw_dashed_line(
+        vec2(cx + 80.0, 0.0),
+        vec2(cx + 80.0, cy - gapp),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+    draw_dashed_line(
+        vec2(cx + 40.0, 0.0),
+        vec2(cx + 40.0, cy - gapp),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+
+    // dashed for up lane 2
+    draw_dashed_line(
+        vec2(cx - 40.0, 0.0),
+        vec2(cx - 40.0, cy - gapp),
+        dash,
+        space,
+        thickness,
+        WHITE,
+    );
+    draw_dashed_line(
+        vec2(cx - 80.0, 0.0),
+        vec2(cx - 80.0, cy - gapp),
+        dash,
+        space,
+        thickness,
+        WHITE,
     );
 }
 

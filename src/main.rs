@@ -36,8 +36,8 @@ use draw_road::*;
 fn window_conf() -> Conf {
     Conf {
         window_title: "road_intersection".to_string(),
-        window_width: 900,
-        window_height: 800,
+        window_width: 1200,
+        window_height: 900,
         window_resizable: false,
         fullscreen: false,
         ..Default::default()
@@ -87,7 +87,7 @@ async fn main() {
                     30,
                     30,
                     cord,
-                    rand::gen_range(1, 4),
+                    rand::gen_range(1, 10),
                 ));
             }
         }
@@ -100,7 +100,7 @@ async fn main() {
                     30,
                     30,
                     cord,
-                    rand::gen_range(1, 4),
+                    rand::gen_range(1, 10),
                 ));
             }
         }
@@ -113,7 +113,7 @@ async fn main() {
                     30,
                     30,
                     cord,
-                    rand::gen_range(1, 4),
+                    rand::gen_range(1, 10),
                 ));
             }
         }
@@ -126,7 +126,7 @@ async fn main() {
                     30,
                     30,
                     cord,
-                    rand::gen_range(1, 4),
+                    rand::gen_range(1, 10),
                 ));
             }
         }
@@ -149,7 +149,7 @@ async fn main() {
                     30,
                     30,
                     cord,
-                    rand::gen_range(1, 4),
+                    rand::gen_range(1, 10),
                 ));
             }
         }
