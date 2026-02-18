@@ -36,20 +36,18 @@ use draw_road::*;
 fn window_conf() -> Conf {
     Conf {
         window_title: "road_intersection".to_string(),
-        window_width: 1200,
-        window_height: 900,
+        window_width: 1000,
+        window_height: 800,
         window_resizable: false,
         fullscreen: false,
         ..Default::default()
     }
 }
 
-// Helper to check if it's safe to spawn a new car
 fn can_spawn(cars: &Vec<Car>, direction: &str, spawn_cord: (f32, f32)) -> bool {
     let safe_dist = 60.0;
     for car in cars {
         if car.direction == direction {
-            // Simple distance check
             let dist =
                 ((car.cord.0 - spawn_cord.0).powi(2) + (car.cord.1 - spawn_cord.1).powi(2)).sqrt();
             if dist < safe_dist {
@@ -62,6 +60,8 @@ fn can_spawn(cars: &Vec<Car>, direction: &str, spawn_cord: (f32, f32)) -> bool {
 
 #[macroquad::main(window_conf)]
 async fn main() {
+    let car_tex: Texture2D = load_texture("assets/car.png").await.unwrap();
+    car_tex.set_filter(FilterMode::Nearest);
     let mut cars: Vec<Car> = Vec::new();
 
     let safety_gap = 50.0;
@@ -83,67 +83,111 @@ async fn main() {
             let random_case = rand::gen_range(0, 3);
             let (cord, direction) = match random_case {
                 0 => (
-                    (screen_width() / 2.0 + 82.0, screen_height() - 35.0),
+                    (screen_width() / 2.0 + 85.0, screen_height() - 55.0),
                     "up_right",
                 ),
-                1 => ((screen_width() / 2.0 + 42.0, 10.0), "up_stright"),
-                _ => ((10.0, screen_height() / 2.0 + 2.0), "up_left"),
+                1 => (
+                    (screen_width() / 2.0 + 45.0, screen_height() - 55.0),
+                    "up_stright",
+                ),
+                _ => (
+                    (screen_width() / 2.0 + 5.0, screen_height() - 55.0),
+                    "up_left",
+                ),
             };
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(direction.to_string(), 30, 30, cord, 0));
+                cars.push(Car::new(direction.to_string(), 30, 50, cord, 0, 0.0));
             }
         }
 
         if is_key_pressed(KeyCode::Right) {
             let random_case = rand::gen_range(0, 3);
             let (cord, direction) = match random_case {
-                0 => ((10.0, screen_height() + 82.0), "right_right"),
-                1 => ((10.0, screen_height() / 2.0 + 42.0), "right_stright"),
-                _ => ((10.0, screen_height() / 2.0 + 2.0), "right_left"),
+                0 => ((10.0, screen_height() / 2.0 + 75.0), "right_right"),
+                1 => ((10.0, screen_height() / 2.0 + 35.0), "right_stright"),
+                _ => ((10.0, screen_height() / 2.0 - 5.0), "right_left"),
             };
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(direction.to_string(), 30, 30, cord, 0));
+                cars.push(Car::new(direction.to_string(), 30, 50, cord, 0, 90.0));
             }
         }
 
         if is_key_pressed(KeyCode::Down) {
             let random_case = rand::gen_range(0, 3);
             let (cord, direction) = match random_case {
-                0 => ((screen_width() / 2.0 - 110.0, 10.0), "down_right"),
-                1 => ((screen_width() / 2.0 - 90.0, 10.0), "down_stright"),
-                _ => ((screen_width() / 2.0 - 50.0, 10.0), "down_left"),
+                0 => ((screen_width() / 2.0 - 115.0, 5.0), "down_right"),
+                1 => ((screen_width() / 2.0 - 75.0, 5.0), "down_stright"),
+                _ => ((screen_width() / 2.0 - 35.0, 5.0), "down_left"),
             };
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(direction.to_string(), 30, 30, cord, 0));
+                cars.push(Car::new(direction.to_string(), 30, 50, cord, 0, 180.0));
             }
         }
 
         if is_key_pressed(KeyCode::Left) {
             let random_case = rand::gen_range(0, 3);
             let (cord, direction) = match random_case {
-                0 => ((screen_width() - 10.0, screen_height() / 2.0 - 115.0), "left_right"),
-                1 => ((screen_width() - 10.0, screen_height() / 2.0 - 75.0), "left_stright"),
-                _ => ((screen_width() - 10.0, screen_height() / 2.0 - 35.0), "left_left"),
+                0 => (
+                    (screen_width() - 40.0, screen_height() / 2.0 - 125.0),
+                    "left_right",
+                ),
+                1 => (
+                    (screen_width() - 40.0, screen_height() / 2.0 - 85.0),
+                    "left_stright",
+                ),
+                _ => (
+                    (screen_width() - 40.0, screen_height() / 2.0 - 45.0),
+                    "left_left",
+                ),
             };
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(direction.to_string(), 30, 30, cord, 0));
+                cars.push(Car::new(direction.to_string(), 30, 50, cord, 0, 270.0));
             }
         }
 
         if is_key_pressed(KeyCode::R) {
-            let random_dir = rand::gen_range(0, 4);
-            let (direction, cord) = match random_dir {
-                0 => ("up", (screen_width() / 2.0 + 15.0, screen_height() - 35.0)),
-                1 => ("down", (screen_width() / 2.0 - 45.0, 10.0)),
-                2 => (
-                    "left",
-                    (screen_width() - 35.0, screen_height() / 2.0 - 45.0),
+            let random_dir = rand::gen_range(0, 12);
+            let (cord, direction, rotation) = match random_dir {
+                0 => (
+                    (screen_width() / 2.0 + 85.0, screen_height() - 55.0),
+                    "up_right",
+                    0.0,
                 ),
-                _ => ("right", (10.0, screen_height() / 2.0 + 15.0)),
+                1 => (
+                    (screen_width() / 2.0 + 45.0, screen_height() - 55.0),
+                    "up_stright",
+                    0.0,
+                ),
+                2 => (
+                    (screen_width() / 2.0 + 5.0, screen_height() - 55.0),
+                    "up_left",
+                    0.0,
+                ),
+                3 => ((10.0, screen_height() / 2.0 + 75.0), "right_right", 90.0),
+                4 => ((10.0, screen_height() / 2.0 + 35.0), "right_stright", 90.0),
+                5 => ((10.0, screen_height() / 2.0 - 5.0), "right_left", 90.0),
+                6 => ((screen_width() / 2.0 - 115.0, 5.0), "down_right", 180.0),
+                7 => ((screen_width() / 2.0 - 75.0, 5.0), "down_stright", 180.0),
+                8 => ((screen_width() / 2.0 - 35.0, 5.0), "down_left", 180.0),
+                9 => (
+                    (screen_width() - 40.0, screen_height() / 2.0 - 125.0),
+                    "left_right",
+                    270.0,
+                ),
+                10 => (
+                    (screen_width() - 40.0, screen_height() / 2.0 - 85.0),
+                    "left_stright",
+                    270.0,
+                ),
+                _ => (
+                    (screen_width() - 40.0, screen_height() / 2.0 - 45.0),
+                    "left_left",
+                    270.0,
+                ),
             };
 
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(direction.to_string(), 30, 30, cord, 0));
+                cars.push(Car::new(direction.to_string(), 30, 50, cord, 0, rotation));
             }
         }
 
@@ -162,7 +206,6 @@ async fn main() {
                 if my_dir == other.direction {
                     let other_cord = other.cord;
 
-                    // Calculate distance
                     let dist = ((my_cord.0 - other_cord.0).powi(2)
                         + (my_cord.1 - other_cord.1).powi(2))
                     .sqrt();
@@ -197,12 +240,16 @@ async fn main() {
             .collect();
 
         for car in &cars {
-            draw_rectangle(
+            draw_texture_ex(
+                &car_tex,
                 car.cord.0,
                 car.cord.1,
-                car.width as f32,
-                car.height as f32,
-                car.color,
+                WHITE,
+                DrawTextureParams {
+                    dest_size: Some(vec2(car.width as f32, car.height as f32)),
+                    rotation: car.rotation.to_radians(),
+                    ..Default::default()
+                },
             );
         }
 

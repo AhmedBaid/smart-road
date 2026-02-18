@@ -7,10 +7,11 @@ pub struct Car {
     pub cord: (f32, f32),
     pub color: Color,
     pub speed: f32,
+    pub rotation: f32,
 }
 
 impl Car {
-    pub fn new(direction: String, width: i32, height: i32, cord: (f32, f32), color: i32) -> Self {
+    pub fn new(direction: String, width: i32, height: i32, cord: (f32, f32), color: i32, rotation: f32) -> Self {
         let color = match color {
             0 => RED,
             _ => RED,
@@ -22,6 +23,7 @@ impl Car {
             cord,
             color,
             speed: 360.0,
+            rotation,
         }
     }
 
