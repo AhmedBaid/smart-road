@@ -80,54 +80,53 @@ async fn main() {
         }
 
         if is_key_pressed(KeyCode::Up) {
-            let cord = (screen_width() / 2.0 + 15.0, screen_height() - 35.0);
-            if can_spawn(&cars, "up", cord) {
-                cars.push(Car::new(
-                    "up".to_string(),
-                    30,
-                    30,
-                    cord,
-                    rand::gen_range(1, 10),
-                ));
+            let random_case = rand::gen_range(0, 3);
+            let (cord, direction) = match random_case {
+                0 => (
+                    (screen_width() / 2.0 + 82.0, screen_height() - 35.0),
+                    "up_right",
+                ),
+                1 => ((screen_width() / 2.0 + 42.0, 10.0), "up_stright"),
+                _ => ((10.0, screen_height() / 2.0 + 2.0), "up_left"),
+            };
+            if can_spawn(&cars, direction, cord) {
+                cars.push(Car::new(direction.to_string(), 30, 30, cord, 0));
             }
         }
 
         if is_key_pressed(KeyCode::Right) {
-            let cord = (10.0, screen_height() / 2.0 + 15.0);
-            if can_spawn(&cars, "right", cord) {
-                cars.push(Car::new(
-                    "right".to_string(),
-                    30,
-                    30,
-                    cord,
-                    rand::gen_range(1, 10),
-                ));
+            let random_case = rand::gen_range(0, 3);
+            let (cord, direction) = match random_case {
+                0 => ((10.0, screen_height() + 82.0), "right_right"),
+                1 => ((10.0, screen_height() / 2.0 + 42.0), "right_stright"),
+                _ => ((10.0, screen_height() / 2.0 + 2.0), "right_left"),
+            };
+            if can_spawn(&cars, direction, cord) {
+                cars.push(Car::new(direction.to_string(), 30, 30, cord, 0));
             }
         }
 
         if is_key_pressed(KeyCode::Down) {
-            let cord = (screen_width() / 2.0 - 45.0, 10.0);
-            if can_spawn(&cars, "down", cord) {
-                cars.push(Car::new(
-                    "down".to_string(),
-                    30,
-                    30,
-                    cord,
-                    rand::gen_range(1, 10),
-                ));
+            let random_case = rand::gen_range(0, 3);
+            let (cord, direction) = match random_case {
+                0 => ((screen_width() / 2.0 - 110.0, 10.0), "down_right"),
+                1 => ((screen_width() / 2.0 - 90.0, 10.0), "down_stright"),
+                _ => ((screen_width() / 2.0 - 50.0, 10.0), "down_left"),
+            };
+            if can_spawn(&cars, direction, cord) {
+                cars.push(Car::new(direction.to_string(), 30, 30, cord, 0));
             }
         }
 
         if is_key_pressed(KeyCode::Left) {
-            let cord = (screen_width() - 35.0, screen_height() / 2.0 - 45.0);
-            if can_spawn(&cars, "left", cord) {
-                cars.push(Car::new(
-                    "left".to_string(),
-                    30,
-                    30,
-                    cord,
-                    rand::gen_range(1, 10),
-                ));
+            let random_case = rand::gen_range(0, 3);
+            let (cord, direction) = match random_case {
+                0 => ((screen_width() - 10.0, screen_height() / 2.0 - 115.0), "left_right"),
+                1 => ((screen_width() - 10.0, screen_height() / 2.0 - 75.0), "left_stright"),
+                _ => ((screen_width() - 10.0, screen_height() / 2.0 - 35.0), "left_left"),
+            };
+            if can_spawn(&cars, direction, cord) {
+                cars.push(Car::new(direction.to_string(), 30, 30, cord, 0));
             }
         }
 
@@ -144,13 +143,7 @@ async fn main() {
             };
 
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(
-                    direction.to_string(),
-                    30,
-                    30,
-                    cord,
-                    rand::gen_range(1, 10),
-                ));
+                cars.push(Car::new(direction.to_string(), 30, 30, cord, 0));
             }
         }
 

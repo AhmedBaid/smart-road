@@ -12,8 +12,7 @@ pub struct Car {
 impl Car {
     pub fn new(direction: String, width: i32, height: i32, cord: (f32, f32), color: i32) -> Self {
         let color = match color {
-            1 => YELLOW,
-            2 => BLUE,
+            0 => RED,
             _ => RED,
         };
         Self {
@@ -26,10 +25,9 @@ impl Car {
         }
     }
 
-    // Added 'blocked' parameter
     pub fn update(&mut self, dt: f32, blocked: bool) {
         if blocked {
-            return; // Don't move if blocked
+            return;
         }
         let (mut x, mut y) = self.cord;
 
