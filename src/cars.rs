@@ -5,23 +5,23 @@ pub struct Car {
     pub width: i32,
     pub height: i32,
     pub cord: (f32, f32),
-    pub color: Color,
     pub speed: f32,
     pub rotation: f32,
 }
 
 impl Car {
-    pub fn new(direction: String, width: i32, height: i32, cord: (f32, f32), color: i32, rotation: f32) -> Self {
-        let color = match color {
-            0 => RED,
-            _ => RED,
-        };
+    pub fn new(
+        direction: String,
+        width: i32,
+        height: i32,
+        cord: (f32, f32),
+        rotation: f32,
+    ) -> Self {
         Self {
             direction,
             width,
             height,
             cord,
-            color,
             speed: 360.0,
             rotation,
         }
@@ -34,72 +34,81 @@ impl Car {
         let (mut x, mut y) = self.cord;
 
         match self.direction.as_str() {
-            "up" => {
-                if y >= screen_height() / 2.0 + 12.0
-                    && y <= screen_height() / 2.0 + 18.0
-                    && self.color == RED
-                {
-                    y = screen_height() / 2.0 + 15.0;
+            "up_right" => {
+                if y < screen_height() / 2.0 + 80.0 {
                     x += self.speed * dt;
-                } else if y >= screen_height() / 2.0 - 48.0
-                    && y <= screen_height() / 2.0 - 43.0
-                    && self.color == YELLOW
-                {
-                    y = screen_height() / 2.0 - 45.0;
+                    self.rotation = 90.0;
+                } else {
+                    y -= self.speed * dt;
+                    self.rotation = 0.0;
+                }
+            }
+            "up_stright" => {
+                y -= self.speed * dt;
+            }
+            "up_left" => {
+                if y < screen_height() / 2.0 - 40.0 {
                     x -= self.speed * dt;
+                    self.rotation = 270.0;
                 } else {
                     y -= self.speed * dt;
                 }
             }
-            "down" => {
-                if y >= screen_height() / 2.0 - 48.0
-                    && y <= screen_height() / 2.0 - 43.0
-                    && self.color == RED
-                {
-                    y = screen_height() / 2.0 - 45.0;
-                    x -= self.speed * dt;
-                } else if y >= screen_height() / 2.0 + 12.0
-                    && y <= screen_height() / 2.0 + 18.0
-                    && self.color == YELLOW
-                {
-                    y = screen_height() / 2.0 + 15.0;
+            "right_right" => {
+                if x < screen_width() / 2.0 - 115.0 {
                     x += self.speed * dt;
                 } else {
                     y += self.speed * dt;
+                    self.rotation = 180.0;
                 }
             }
-            "left" => {
-                if x >= screen_width() / 2.0 + 12.0
-                    && x <= screen_width() / 2.0 + 18.0
-                    && self.color == RED
-                {
-                    x = screen_width() / 2.0 + 15.0;
+            "right_stright" => {
+                x += self.speed * dt;
+            }
+            "right_left" => {
+                if x < screen_width() / 2.0 + 5.0 {
+                    x += self.speed * dt;
+                } else {
                     y -= self.speed * dt;
-                } else if x >= screen_width() / 2.0 - 48.0
-                    && x <= screen_width() / 2.0 - 42.0
-                    && self.color == YELLOW
-                {
-                    x = screen_width() / 2.0 - 45.0;
+                    self.rotation = 0.0;
+                }
+            }
+            "down_right" => {
+                if y < screen_height() / 2.0 - 125.0 {
                     y += self.speed * dt;
                 } else {
                     x -= self.speed * dt;
+                    self.rotation = 270.0;
                 }
             }
-            "right" => {
-                if x >= screen_width() / 2.0 - 48.0
-                    && x <= screen_width() / 2.0 - 42.0
-                    && self.color == RED
-                {
-                    x = screen_width() / 2.0 - 45.0;
+            "down_stright" => {
+                y += self.speed * dt;
+            }
+            "down_left" => {
+                if y < screen_height() / 2.0 - 5.0 {
                     y += self.speed * dt;
-                } else if x >= screen_width() / 2.0 + 12.0
-                    && x <= screen_width() / 2.0 + 18.0
-                    && self.color == YELLOW
-                {
-                    x = screen_width() / 2.0 + 15.0;
-                    y -= self.speed * dt;
                 } else {
                     x += self.speed * dt;
+                    self.rotation = 90.0;
+                }
+            }
+            "left_right" => {
+                if x > screen_width() / 2.0 + 85.0 {
+                    x -= self.speed * dt;
+                } else {
+                    y -= self.speed * dt;
+                    self.rotation = 0.0;
+                }
+            }
+            "left_stright" => {
+                x -= self.speed * dt;
+            }
+            "left_left" => {
+                if x > screen_width() / 2.0 - 35.0 {
+                    x -= self.speed * dt;
+                } else {
+                    y += self.speed * dt;
+                    self.rotation = 180.0;
                 }
             }
             _ => {}

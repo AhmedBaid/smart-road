@@ -36,7 +36,7 @@ use draw_road::*;
 fn window_conf() -> Conf {
     Conf {
         window_title: "road_intersection".to_string(),
-        window_width: 1000,
+        window_width: 1100,
         window_height: 800,
         window_resizable: false,
         fullscreen: false,
@@ -96,7 +96,7 @@ async fn main() {
                 ),
             };
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(direction.to_string(), 30, 50, cord, 0, 0.0));
+                cars.push(Car::new(direction.to_string(), 30, 50, cord,  0.0));
             }
         }
 
@@ -108,7 +108,7 @@ async fn main() {
                 _ => ((10.0, screen_height() / 2.0 - 5.0), "right_left"),
             };
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(direction.to_string(), 30, 50, cord, 0, 90.0));
+                cars.push(Car::new(direction.to_string(), 30, 50, cord,  90.0));
             }
         }
 
@@ -120,7 +120,7 @@ async fn main() {
                 _ => ((screen_width() / 2.0 - 35.0, 5.0), "down_left"),
             };
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(direction.to_string(), 30, 50, cord, 0, 180.0));
+                cars.push(Car::new(direction.to_string(), 30, 50, cord,  180.0));
             }
         }
 
@@ -141,7 +141,7 @@ async fn main() {
                 ),
             };
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(direction.to_string(), 30, 50, cord, 0, 270.0));
+                cars.push(Car::new(direction.to_string(), 30, 50, cord, 270.0));
             }
         }
 
@@ -187,7 +187,7 @@ async fn main() {
             };
 
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(direction.to_string(), 30, 50, cord, 0, rotation));
+                cars.push(Car::new(direction.to_string(), 30, 50, cord,  rotation));
             }
         }
 
