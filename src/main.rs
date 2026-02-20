@@ -96,7 +96,7 @@ async fn main() {
                 ),
             };
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(direction.to_string(), 30, 50, cord,  0.0));
+                cars.push(Car::new(direction.to_string(), 30, 50, cord, 0.0));
             }
         }
 
@@ -108,7 +108,7 @@ async fn main() {
                 _ => ((10.0, screen_height() / 2.0 - 5.0), "right_left"),
             };
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(direction.to_string(), 30, 50, cord,  90.0));
+                cars.push(Car::new(direction.to_string(), 30, 50, cord, 90.0));
             }
         }
 
@@ -120,7 +120,7 @@ async fn main() {
                 _ => ((screen_width() / 2.0 - 35.0, 5.0), "down_left"),
             };
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(direction.to_string(), 30, 50, cord,  180.0));
+                cars.push(Car::new(direction.to_string(), 30, 50, cord, 180.0));
             }
         }
 
@@ -187,57 +187,68 @@ async fn main() {
             };
 
             if can_spawn(&cars, direction, cord) {
-                cars.push(Car::new(direction.to_string(), 30, 50, cord,  rotation));
+                cars.push(Car::new(direction.to_string(), 30, 50, cord, rotation));
             }
         }
+        let cx = screen_width() / 2.0;
+        let cy = screen_height() / 2.0;
 
         for i in 0..cars.len() {
-            let mut blocked = false;
-            let my_cord = cars[i].cord;
-            let my_dir = cars[i].direction.clone();
+            let mut requested_speed = cars[i].max_speed;
+            let my_radar = cars[i].get_radar();
+            let my_rect = cars[i].get_rect();
+            let my_dist_center =
+                ((cars[i].cord.0 - cx).powi(2) + (cars[i].cord.1 - cy).powi(2)).sqrt();
 
             for j in 0..cars.len() {
                 if i == j {
                     continue;
                 }
+                let other_rect = cars[j].get_rect();
+                let other_radar = cars[j].get_radar();
+                let dist_between = ((cars[i].cord.0 - cars[j].cord.0).powi(2)
+                    + (cars[i].cord.1 - cars[j].cord.1).powi(2))
+                .sqrt();
 
-                let other = &cars[j];
+                // 1. السيارة تقترب من سيارة أخرى في الأمام (إدارة المسافة الآمنة)
+                if my_radar.intersect(other_rect).is_some() {
+                    if dist_between < 45.0 {
+                        requested_speed = 0.0; // توقف لتجنب الاصطدام
+                    } else if dist_between < 80.0 {
+                        requested_speed = requested_speed.min(cars[i].max_speed * 0.25);
+                    // سرعة بطيئة
+                    } else {
+                        requested_speed = requested_speed.min(cars[i].max_speed * 0.50);
+                        // سرعة متوسطة
+                    }
+                }
 
-                if my_dir == other.direction {
-                    let other_cord = other.cord;
-
-                    let dist = ((my_cord.0 - other_cord.0).powi(2)
-                        + (my_cord.1 - other_cord.1).powi(2))
-                    .sqrt();
-
-                    if dist < safety_gap {
-                        let is_ahead = match my_dir.as_str() {
-                            "up" => other_cord.1 < my_cord.1,
-                            "down" => other_cord.1 > my_cord.1,
-                            "left" => other_cord.0 < my_cord.0,
-                            "right" => other_cord.0 > my_cord.0,
-                            _ => false,
-                        };
-
-                        if is_ahead {
-                            blocked = true;
-                            break;
-                        }
+                // 2. إدارة التقاطع (تجنب التصادم عند الانعطاف أو التقاطع)
+                if my_radar.intersect(other_radar).is_some()
+                    && my_rect.intersect(other_rect).is_none()
+                {
+                    let other_dist_center =
+                        ((cars[j].cord.0 - cx).powi(2) + (cars[j].cord.1 - cy).powi(2)).sqrt();
+                    // الأولوية للسيارة الأقرب لمركز التقاطع
+                    if my_dist_center > other_dist_center
+                        || (my_dist_center == other_dist_center && i > j)
+                    {
+                        requested_speed = requested_speed.min(cars[i].max_speed * 0.25);
                     }
                 }
             }
-
-            cars[i].update(dt, blocked);
+            cars[i].target_speed = requested_speed;
         }
 
-        cars = cars
-            .iter()
-            .filter(|car| {
-                let (x, y) = car.cord;
-                x > -30.0 && x < screen_width() + 30.0 && y > -30.0 && y < screen_height() + 30.0
-            })
-            .cloned()
-            .collect();
+        // تحديث جميع السيارات (لم نعد بحاجة لتمرير blocked)
+        for car in cars.iter_mut() {
+            car.update(dt);
+        }
+
+        cars.retain(|car| {
+            let (x, y) = car.cord;
+            x > -30.0 && x < screen_width() + 30.0 && y > -30.0 && y < screen_height() + 30.0
+        });
 
         for car in &cars {
             draw_texture_ex(
