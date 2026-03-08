@@ -50,7 +50,7 @@ impl Stats {
 
 fn window_conf() -> Conf {
     Conf {
-        window_title: "road_intersection".to_string(),
+        window_title: "Smart AV Intersection".to_string(),
         window_width: 1100,
         window_height: 800,
         window_resizable: false,
@@ -59,9 +59,8 @@ fn window_conf() -> Conf {
     }
 }
 
-// Fixed: Checks ALL cars, regardless of direction, to prevent spawning on top of cross-traffic
 fn can_spawn(cars: &Vec<Car>, spawn_cord: (f32, f32)) -> bool {
-    let safe_dist = 85.0; 
+    let safe_dist = 220.0;
     for car in cars {
         let dist = ((car.cord.0 - spawn_cord.0).powi(2) + (car.cord.1 - spawn_cord.1).powi(2)).sqrt();
         if dist < safe_dist {
@@ -76,19 +75,21 @@ async fn main() {
     let car_tex: Texture2D = load_texture("assets/car2.png").await.unwrap();
     car_tex.set_filter(FilterMode::Nearest);
     let mut cars: Vec<Car> = Vec::new();
-
     let mut stats = Stats::new();
     let mut show_stats = false;
+
+    // Smart Intersection Velocity Constants
+    const V_CRUISE: f32 = 400.0;
+    const V_ADJUST: f32 = 250.0;
+    const V_CRAWL: f32 = 100.0;
+    const V_STOP: f32 = 0.0;
+    const SAFETY_DISTANCE: f32 = 150.0; // Strictly positive safety distance
 
     loop {
         let dt = get_frame_time();
 
         if is_key_pressed(KeyCode::Escape) {
-            if show_stats {
-                break; 
-            } else {
-                show_stats = true; 
-            }
+            show_stats = !show_stats;
         }
 
         if show_stats {
@@ -215,13 +216,10 @@ async fn main() {
         
         let cx = screen_width() / 2.0;
         let cy = screen_height() / 2.0;
-        // Minimum crawl speed (px/s) used when yielding instead of full stop
-        let min_crawl = 30.0;
-        // Distance under which we consider an imminent collision and allow a full stop
-        let stop_threshold = 35.0;
 
+        // Smart Intersection System: Velocity Control
         for i in 0..cars.len() {
-            let mut requested_speed = cars[i].max_speed;
+            let mut requested_velocity = V_CRUISE;
             let my_radar = cars[i].get_radar();
             let my_rect = cars[i].get_rect();
             let my_dist_center = ((cars[i].cord.0 - cx).powi(2) + (cars[i].cord.1 - cy).powi(2)).sqrt();
@@ -233,49 +231,44 @@ async fn main() {
                 let other_dist_center = ((cars[j].cord.0 - cx).powi(2) + (cars[j].cord.1 - cy).powi(2)).sqrt();
                 let dist_between = ((cars[i].cord.0 - cars[j].cord.0).powi(2) + (cars[i].cord.1 - cars[j].cord.1).powi(2)).sqrt();
 
-                // 1. Avoid Rear-ending (Car physically inside my radar)
+                // 1. Same Lane Safety (Rear-ending Avoidance)
                 if my_radar.intersect(other_rect).is_some() {
-                    if dist_between < stop_threshold {
-                        // Imminent collision: allow hard stop
-                        requested_speed = 0.0;
-                    } else if dist_between < 150.0 {
-                        // Close: slow to a careful crawl
-                        requested_speed = requested_speed.min(cars[i].max_speed * 0.20);
+                    if dist_between < SAFETY_DISTANCE {
+                        requested_velocity = V_STOP; // Hard safety stop
+                    } else if dist_between < SAFETY_DISTANCE * 1.5 {
+                        requested_velocity = requested_velocity.min(V_CRAWL); // Careful follow distance
                     } else {
-                        // Approaching: slow down but keep flow
-                        requested_speed = requested_speed.min(cars[i].max_speed * 0.45);
+                        requested_velocity = requested_velocity.min(V_ADJUST); // Adjusting speed 
                     }
                 }
 
-                // 2. Intersection Right-of-Way (Paths cross but haven't hit yet)
+                // 2. Intersection Right-of-Way (Cross-traffic)
                 if my_radar.intersect(other_radar).is_some() && my_rect.intersect(other_rect).is_none() {
                     let dist_diff = my_dist_center - other_dist_center;
 
-                    // Cars already deep inside the intersection get de facto priority; we yield but don't fully stop
-                    if other_dist_center < 130.0 && my_dist_center >= 130.0 {
-                        requested_speed = requested_speed.min(cars[i].max_speed * 0.18);
-                    }
-                    // Whoever is closer to the center goes first; yield by crawling
-                    else if dist_diff > 15.0 {
-                        requested_speed = requested_speed.min(cars[i].max_speed * 0.18);
-                    }
-                    // Tie-breaker: prefer lower-index car but only slow to avoid deadlocks
-                    else if dist_diff.abs() <= 15.0 && i > j {
-                        requested_speed = requested_speed.min(cars[i].max_speed * 0.15);
+                    if other_dist_center < 250.0 && my_dist_center >= 250.0 {
+                        // Other car is deep in intersection; we must yield
+                        requested_velocity = requested_velocity.min(V_STOP);
+                    } else if dist_diff > 40.0 {
+                        // Other car is closer to the center
+                        if my_dist_center < 200.0 {
+                            requested_velocity = requested_velocity.min(V_STOP);
+                        } else {
+                            requested_velocity = requested_velocity.min(V_CRAWL);
+                        }
+                    } else if dist_diff.abs() <= 40.0 && i > j {
+                        // Tie-breaker yield
+                        requested_velocity = requested_velocity.min(V_ADJUST);
                     }
                 }
             }
-            // Ensure we don't force a tiny nonzero speed; either full stop or a meaningful crawl
-            if requested_speed > 0.0 && requested_speed < min_crawl {
-                requested_speed = min_crawl.min(cars[i].max_speed);
-            }
 
-            cars[i].target_speed = requested_speed;
+            cars[i].target_velocity = requested_velocity;
         }
 
         for car in cars.iter_mut() {
             car.update(dt);
-            stats.sample_velocity(car.speed);
+            stats.sample_velocity(car.velocity); // Now tracking velocity correctly
         }
 
         let current_time = get_time();
@@ -301,6 +294,8 @@ async fn main() {
                 },
             );
         }
+
+        draw_text(&format!("Autonomous Vehicles Active: {}", cars.len()), 10.0, 24.0, 22.0, WHITE);
 
         next_frame().await;
     }
