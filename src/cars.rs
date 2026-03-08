@@ -7,9 +7,11 @@ pub struct Car {
     pub height: i32,
     pub cord: (f32, f32),
     pub speed: f32,
-    pub target_speed: f32, // السرعة الذكية المطلوبة
-    pub max_speed: f32,    // السرعة القصوى
+    pub target_speed: f32,
+    pub max_speed: f32,
+    pub speed_tier: u8,
     pub rotation: f32,
+    pub spawn_time: f64,
 }
 
 impl Car {
@@ -20,20 +22,28 @@ impl Car {
         cord: (f32, f32),
         rotation: f32,
     ) -> Self {
-        let initial_speed = macroquad::rand::gen_range(150.0, 250.0);
+        // Choose one of three discrete speed tiers: 0 = slow, 1 = medium, 2 = fast
+        let tier = macroquad::rand::gen_range(0, 3) as u8;
+        let tier_speed = match tier {
+            0 => 300.0, // slow
+            1 => 400.0, // medium
+            _ => 500.0, // fast
+        };
+
         Self {
             direction,
             width,
             height,
             cord,
-            speed: initial_speed,
-            target_speed: initial_speed,
-            max_speed: initial_speed,
+            speed: tier_speed,
+            target_speed: tier_speed,
+            max_speed: tier_speed,
+            speed_tier: tier,
             rotation,
+            spawn_time: get_time(),
         }
     }
 
-    // دالة لاستنتاج اتجاه حركة سيارتك (لتركيب الرادار في الأمام)
     pub fn current_heading(&self) -> (f32, f32) {
         let (x, y) = self.cord;
         let cx = screen_width() / 2.0;
@@ -41,7 +51,6 @@ impl Car {
         let mut dx = 0.0;
         let mut dy = 0.0;
 
-        // نفس منطق الانعطاف الخاص بك
         match self.direction.as_str() {
             "up_right" => { if y < cy + 80.0 { dx = 1.0; } else { dy = -1.0; } }
             "up_stright" => { dy = -1.0; }
@@ -60,41 +69,40 @@ impl Car {
         (dx, dy)
     }
 
-    // صندوق التصادم
     pub fn get_rect(&self) -> Rect {
         Rect::new(self.cord.0, self.cord.1, self.width as f32, self.height as f32)
     }
 
-    // إنشاء مستطيل الرادار أمام السيارة
     pub fn get_radar(&self) -> Rect {
         let (dx, dy) = self.current_heading();
         let (x, y) = self.cord;
         let w = self.width as f32;
         let h = self.height as f32;
-        let radar_len = 70.0; // طول الرادار
+        let radar_len = 80.0; // Slightly longer
+        let thick = 36.0;     // Slightly thicker to catch cars during sharp turns
 
-        if dx > 0.1 { Rect::new(x + w, y, radar_len, h) }
-        else if dx < -0.1 { Rect::new(x - radar_len, y, radar_len, h) }
-        else if dy > 0.1 { Rect::new(x, y + h, w, radar_len) }
-        else if dy < -0.1 { Rect::new(x, y - radar_len, w, radar_len) }
+        if dx > 0.1 { Rect::new(x + w, y - (thick - h)/2.0, radar_len, thick) }
+        else if dx < -0.1 { Rect::new(x - radar_len, y - (thick - h)/2.0, radar_len, thick) }
+        else if dy > 0.1 { Rect::new(x - (thick - w)/2.0, y + h, thick, radar_len) }
+        else if dy < -0.1 { Rect::new(x - (thick - w)/2.0, y - radar_len, thick, radar_len) }
         else { Rect::new(x, y, 0.0, 0.0) }
     }
 
     pub fn update(&mut self, dt: f32) {
-        // تسارع وتباطؤ سلس (Smooth Velocity)
-        let accel = 400.0;
+        let accel = 600.0;
+        let decel = 1200.0; // Stronger brakes to prevent sliding into cars
+        
         if self.speed < self.target_speed {
             self.speed += accel * dt;
             if self.speed > self.target_speed { self.speed = self.target_speed; }
         } else if self.speed > self.target_speed {
-            self.speed -= accel * 2.0 * dt;
+            self.speed -= decel * dt;
             if self.speed < self.target_speed { self.speed = self.target_speed; }
         }
 
         let step = self.speed * dt;
         let (mut x, mut y) = self.cord;
 
-        // الكود الأصلي الخاص بك للحركة تماماً 100%
         match self.direction.as_str() {
             "up_right" => {
                 if y < screen_height() / 2.0 + 80.0 {
